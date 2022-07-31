@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<!-- saved from url=(0049)https://docs.opencv.org/3.4/js_video_display.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <title>Video Capture Example</title>
 <link href="./Video Capture Example_files/js_example_style.css" rel="stylesheet" type="text/css">
 </head>
+
 <body>
 <h2>Video Capture Example</h2>
 <p>
@@ -57,7 +59,6 @@
             if (!streaming) {
                 // clean and stop.
                 src.delete();
-                dst.delete();
                 return;
             }
             let begin = Date.now();
