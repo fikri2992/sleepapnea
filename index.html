@@ -157,7 +157,7 @@
     let model = null;
     let testData = []
     async function loadModel() {
-        model = await tf.loadLayersModel("https://video.bannerbite.com/video/model.json");
+        model = await tf.loadLayersModel("https://video.bannerbite.com/model.json");
         tf.tensor([1, 2, 3, 4]).print()
         console.log("model loaded")
     }
