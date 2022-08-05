@@ -3,23 +3,19 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<title>Video Capture Example</title>
+<title>Analisa tidur Ver. 0.0.2</title>
 <link href="./Video Capture Example_files/js_example_style.css" rel="stylesheet" type="text/css">
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
 </head>
 
 <body>
-<h2>Video Capture Example</h2>
+<h2>Video Capture Analisa Tidur</h2>
 <p>
     Click <b>Start/Stop</b> button to start or stop the camera capture.<br>
-    The <b>videoInput</b> is a &lt;video&gt; element used as OpenCV.js input.
-    The <b>canvasOutput</b> is a &lt;canvas&gt; element used as OpenCv.js output.<br>
-    The code of &lt;textarea&gt; will be executed when video is started.
-    You can modify the code to investigate more.
 </p>
 <div>
 <div class="control"><button id="startAndStop">Start</button></div>
-<textarea class="code" rows="29" cols="100" id="codeEditor" spellcheck="false"></textarea>
+<textarea style="display:none" class="code" rows="29" cols="100" id="codeEditor" spellcheck="false"></textarea>
 </div>
 <p class="err" id="errorMessage"></p>
 <div>
@@ -39,7 +35,9 @@
             <div class="caption" style="display:none">videoInput</div>
         </td>
         <td>
-            <div class="caption">canvasOutput</div>
+            <div id="output" class="caption">...</div>
+            <div id="analizing" class="caption">Not Started</div>
+
         </td>
         <td></td>
         <td></td>
@@ -52,10 +50,30 @@
 <script src="./Video Capture Example_files/utils.js" type="text/javascript"></script>
 <script id="codeSnippet" type="text/code-snippet">
     const FPS = 30;
+    const indexOfMax = (arr) => {
+        if (arr.length === 0) {
+            return -1;
+        }
+
+        var max = arr[0];
+        var maxIndex = 0;
+
+        for (var i = 1; i < arr.length; i++) {
+            if (arr[i] > max) {
+                maxIndex = i;
+                max = arr[i];
+            }
+        }
+
+        return maxIndex;
+    }
     function processVideo() {
         try {
             let video = document.getElementById('videoInput');
             let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+            let classOutput = document.getElementById('output')
+            let analizingOutput = document.getElementById('analizing')
+
             let cap = new cv.VideoCapture(video);
             if (!streaming) {
                 // clean and stop.
@@ -80,7 +98,9 @@
              // detect faces
             let msize = new cv.Size(0, 0);
             faceCascade.detectMultiScale(gray, faces, 1.1, 3, 0, msize, msize);
+            if (faces.size() <= 0) analizingOutput.textContent = "No Face Detected"
             for (let i = 0; i < faces.size(); ++i) {
+                analizingOutput.textContent = "Analizing"
                 let roiGray = gray.roi(faces.get(i));
                 let roiSrc = src.roi(faces.get(i));
                 let point1 = new cv.Point(faces.get(i).x, faces.get(i).y);
@@ -90,20 +110,26 @@
                 testData.push(faces.get(i).x - 0, faces.get(i).y - 0)
                 console.log("iterasi ke:", testData.length)
                 if (testData.length === 900) {
+                    analizingOutput.textContent = "Processing..."
                     const output = model.predict(tf.tensor([[testData]]));
                     const outputData = output.dataSync();
+                    const index = indexOfMax(outputData)
+                    if (index === 0) {
+                        classOutput.textContent = 'Central Sleep Apnea'
+                    }
+                    
+                    if (index === 1) {
+                        classOutput.textContent = 'No Apnea'
+                    } 
+
+                    if (index === 2) {
+                        classOutput.textContent = 'Obstructive Sleep Apnea'
+                    }
+
                     console.log(outputData)
                     testData = []
                 }
 
-                // detect eyes in face ROI
-                eyeCascade.detectMultiScale(roiGray, eyes);
-                for (let j = 0; j < eyes.size(); ++j) {
-                    let point1 = new cv.Point(eyes.get(j).x, eyes.get(j).y);
-                    let point2 = new cv.Point(eyes.get(j).x + eyes.get(j).width,
-                                            eyes.get(j).y + eyes.get(j).height);
-                    cv.rectangle(roiSrc, point1, point2, [0, 0, 255, 255]);
-                }
                 roiGray.delete(); roiSrc.delete();
             }
             cv.imshow('canvasOutput', src);
@@ -174,6 +200,7 @@
             canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
             startAndStop.innerText = 'Start';
         }
+        
 });
 
 </script>
