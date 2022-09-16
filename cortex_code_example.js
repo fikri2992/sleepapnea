@@ -688,7 +688,7 @@ class Cortex {
 // ---------------------------------------------------------
 let socketUrl = 'wss://localhost:6868'
 let user = {
-    "license": "b2e908af-dda7-4ab3-94cb-17f10882ec34",
+    "license": "86e81286-e971-43ca-9199-5b3aae08eb65",
     "clientId": "asdasd",
     "clientSecret": "asdasd",
     "debit": 1

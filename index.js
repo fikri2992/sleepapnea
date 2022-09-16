@@ -32,7 +32,7 @@ class Cortex {
             socket.on('message', (data)=>{
                 try {
                     if(JSON.parse(data)['id']==QUERY_HEADSET_ID){
-                        // console.log(data)
+                        //  
                         // console.log(JSON.parse(data)['result'].length)
                         if(JSON.parse(data)['result'].length > 0){
                             let headsetId = JSON.parse(data)['result'][0]['id']
@@ -93,7 +93,7 @@ class Cortex {
             }
             socket.send(JSON.stringify(authorizeRequest))
             socket.on('message', (data)=>{
-                console.log(data)
+                 
                 try {
                     if(JSON.parse(data)['id']==AUTHORIZE_ID){
                         let cortexToken = JSON.parse(data)['result']['cortexToken']
@@ -146,7 +146,7 @@ class Cortex {
         return new Promise(function(resolve, reject){
             socket.send(JSON.stringify(createSessionRequest));
             socket.on('message', (data)=>{
-                // console.log(data)
+                //  
                 try {
                     if(JSON.parse(data)['id']==CREATE_SESSION_ID){
                         let sessionId = JSON.parse(data)['result']['id']
@@ -179,7 +179,7 @@ class Cortex {
                 try {
                     if(JSON.parse(data)['id']==CREATE_RECORD_REQUEST_ID){
                         console.log('CREATE RECORD RESULT --------------------------------')
-                        console.log(data)
+                         
                         let recordId = JSON.parse(data)['result']['record']['uuid']
                         console.log("=======> recordId:", recordId)
                         resolve(recordId)
@@ -213,7 +213,7 @@ class Cortex {
                 try {
                     if(JSON.parse(data)['id']==INJECT_MARKER_REQUEST_ID){
                         console.log('INJECT MARKER RESULT --------------------------------')
-                        console.log(data)
+                         
                         resolve(data)
                     }
                 } catch (error) {}
@@ -242,7 +242,7 @@ class Cortex {
                 try {
                     if(JSON.parse(data)['id']==STOP_RECORD_REQUEST_ID){
                         console.log('STOP RECORD RESULT --------------------------------')
-                        console.log(data)
+                         
                         resolve(data)
                     }
                 } catch (error) {}
@@ -301,13 +301,6 @@ class Cortex {
         console.log('sub eeg request: ', subRequest)
         socket.send(JSON.stringify(subRequest))
         socket.on('message', (data)=>{
-            try {
-                // if(JSON.parse(data)['id']==SUB_REQUEST_ID){
-                    console.log('SUB REQUEST RESULT --------------------------------')
-                    console.log(data)
-                    console.log('\r\n')
-                // }
-            } catch (error) {}
         })
     }
 
@@ -333,7 +326,7 @@ class Cortex {
                 try {
                     if(JSON.parse(data)['id']==MENTAL_COMMAND_ACTIVE_ACTION_ID){
                         console.log('MENTAL COMMAND ACTIVE ACTION RESULT --------------------')
-                        console.log(data)
+                         
                         console.log('\r\n')
                         resolve(data)
                     }
@@ -428,6 +421,30 @@ class Cortex {
         })
     }
 
+    
+    subRealtime(streams, socket){
+        this.socket.on('open',async ()=>{
+            console.log("masup sini")
+            try {
+                await this.checkGrantAccessAndQuerySessionInfo()
+                this.subRequest(streams, this.authToken, this.sessionId)
+                this.socket.on('message', (data)=>{
+                    // log stream data to file or console here
+                    const eegData = JSON.parse(data)
+                    if (eegData && eegData.eeg && eegData.eeg.length > 0) {
+                        // this.throttle(() => {    
+                            // console.log("data EEG: ", eegData.eeg[7])
+                            socket.emit('rawdata', eegData.eeg[7]);
+                        // }, 100)
+                        
+                    }
+                })
+            } catch (error) {
+                console.log(error)
+            }
+            
+        })
+    }
 
     setupProfile(authToken, headsetId, profileName, status){
         const SETUP_PROFILE_ID = 7
@@ -456,7 +473,7 @@ class Cortex {
                     if(JSON.parse(data)['id']==SETUP_PROFILE_ID){
                         if(JSON.parse(data)['result']['action']==status){
                             console.log('SETUP PROFILE -------------------------------------')
-                            console.log(data)
+                             
                             console.log('\r\n')
                             resolve(data)
                         }
@@ -476,7 +493,7 @@ class Cortex {
             "jsonrpc": "2.0",
             "method": "queryProfile",
             "params": {
-              "cortexToken": authToken
+                "cortexToken": authToken
             },
             "id": QUERY_PROFILE_ID
         }
@@ -487,7 +504,7 @@ class Cortex {
             socket.on('message', (data)=>{
                 try {
                     if(JSON.parse(data)['id']==QUERY_PROFILE_ID){
-                        // console.log(data)
+                        //  
                         resolve(data)
                     }
                 } catch (error) {
@@ -530,7 +547,7 @@ class Cortex {
                 // console.log('inside training ', data)
                 try {
                     if (JSON.parse(data)[id]==TRAINING_ID){
-                        console.log(data)
+                         
                     }  
                 } catch (error) {}
 
@@ -539,7 +556,7 @@ class Cortex {
                     try {
                         if(JSON.parse(data)['sys'][1]=='MC_Succeeded'){
                             console.log('START TRAINING RESULT --------------------------------------')
-                            console.log(data)
+                             
                             console.log('\r\n')
                             resolve(data)
                         }
@@ -551,7 +568,7 @@ class Cortex {
                     try {
                         if(JSON.parse(data)['sys'][1]=='MC_Completed'){
                             console.log('ACCEPT TRAINING RESULT --------------------------------------')
-                            console.log(data)
+                             
                             console.log('\r\n')
                             resolve(data)
                         }
@@ -661,7 +678,7 @@ class Cortex {
             this.subRequest(['com'], this.authToken, this.sessionId)
 
             this.socket.on('message', (data)=>{
-                console.log(data)
+                 
             })
         })
     }
@@ -677,7 +694,7 @@ let user = {
     "debit":1
 }
 
-let c = new Cortex(user, socketUrl)
+
 
 // ---------- sub data stream
 // have six kind of stream data ['fac', 'pow', 'eeg', 'mot', 'met', 'com']
@@ -689,18 +706,29 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
 
-app.get('/', (req, res) => {
-    let streams = ['met','eeg']
-    c.sub(streams)
-    return "connected"
-});
-
-io.on('connection', (socket) => {
-    console.log('a user connected');
-});
+//middlewares
+app.use(express.static('public'))
 
 server.listen(3000, () => {
     console.log('listening on *:3000');
 });
+
+
+
+
+//socket.io instantiation
+const io = require("socket.io")(server)
+
+//listen on every connection
+io.on('connection', (socket) => {
+    //add function to receive and emit response
+    let c = new Cortex(user, socketUrl)
+    let streams = ['eeg']
+    c.subRealtime(streams, socket)
+    // setInterval(() => {
+    //     socket.emit('rawdata', Array.from(Array(128).keys()));
+    // }, 500);
+    console.log("New client connected")
+})
+
