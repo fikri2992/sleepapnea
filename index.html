@@ -8,6 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js" type="text/javascript"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+<script src="https://cdn.socket.io/socket.io-2.2.0.js" ></script>
+
+
 <style>
     .center {
         margin: auto;
@@ -31,7 +34,7 @@
         display: none;
     }
     #myChart {
-        width: 1600px !important;
+        width: 1900px !important;
         height: 400px !important;
     }
 </style>
@@ -68,13 +71,15 @@
 
 
 <script type="text/javascript">
+        let classOutput = document.getElementById('output')
+        let analizingOutput = document.getElementById('analizing')
     // $(document).ready(function() {
         var ctx = document.getElementById("myChart").getContext("2d");
         ctx.canvas.parentNode.style.height = '400px';
         ctx.canvas.parentNode.style.width = '800px';
         const defaultData = Array.from(Array(128).keys())
 
-        var data = {
+        var chartData = {
             labels: defaultData,
             datasets: [{
                 label: "My First dataset",
@@ -84,11 +89,14 @@
                 pointStrokeColor: "transparent",
                 pointHighlightFill: "transparent",
                 pointHighlightStroke: "transparent",
-                data: Array.from({length: 128}, () => (Math.random()*100))
+                data: [4200.769,4195.385,4191.795,4194.615,4192.436,4194.231,4197.051,4195.385,4194.487,4194.744,4195.897,4195.385,4193.718,4194.872,4198.846,4195.897,4196.026,4204.359,4202.692,4194.359,4193.846,4197.564,4197.821,4198.205,4196.41,4193.974,4197.949,4196.41,4192.436,4192.821,4192.436,4192.949,4193.846,4191.026,4195.513,4202.692,4197.564,4197.051,4201.41,4200.128,4201.026,4200.256,4198.077,4200.385,4200.641,4195.256,4195.641,4202.308,4202.564,4198.974,4200.128,4201.282,4199.744,4198.205,4199.231,4202.308,4200.769,4198.333,4200.385,4201.41,4200.128,4200,4200.385,4200.897,4201.026,4200,4200.385,4202.949,4202.949,4202.179,4203.333,4202.179,4201.282,4202.436,4201.154,4199.872,4201.282,4202.564,4202.821,4200.769,4198.718,4200.513,4203.205,4202.179,4199.487,4199.359,4201.282,4202.051,4200,4199.359,4200.769,4201.282,4199.872,4198.846,4200.641,4201.538,4198.974,4197.436,4199.487,4200,4198.333,4198.846,4201.795,4201.41 ,4199.615,4200.256,4200.256,4201.026,4201.923,4200.897,4199.744,4200.513,4200.385,4200,4200.897,4200.513,4200.385,4201.154,4201.026,4200.385,4201.154,4200.641,4197.564,4198.718,4201.795,4201.154,4201.154,4202.692]
             }]
         };
         var options = {
             animation: false,
+            tooltips: {enabled: false},
+            events: [],
+            hover: {mode: null},
             //Boolean - If we want to override with a hard coded scale
             scaleOverride: false,
             //** Required if scaleOverride is true **
@@ -112,21 +120,15 @@
             }
         };
 
-        var myLineChart = new Chart(ctx).Line(data, options);
-        let counter = data.datasets[0].data.length;
+        var myLineChart = new Chart(ctx).Line(chartData, options);
+        let counter = chartData.datasets[0].data.length;
         
-        setInterval(function() {
-            if (counter >= 128){
-                counter = 0;
-            }
-
-            setData(data.datasets[0].data);
-            setLabels(data.labels);
-            var myLineChart = new Chart(ctx).Line(data, options);
-        }, 300);
+        // setInterval(function() {
+        
+        // }, 300);
 
         function setLabels(labels) {
-            let length = data.datasets[0].data.length;
+            let length = chartData.datasets[0].data.length;
             var nextMonthIndex = months.indexOf(labels[labels.length - 1]) + 1;
             var nextMonthName = length;
             counter = counter + 1;
@@ -137,10 +139,10 @@
             // }, 3000);
         }
 
-        function setData(data) {
-            data.push((Math.random()*100) + 1);
+        function setData(oldData, newData) {
+            oldData.push(newData);
             // setTimeout(() => {
-            data.shift();
+            oldData.shift();
             // }, 3000);
         }
         
@@ -158,7 +160,32 @@
     
     let model = null;
     let testData = []
+
     async function loadModel() {
+            try {
+                var socket = io("http://localhost:3000/");
+                let totalDelay = 500;
+                socket.on('rawdata', function(data) {
+                    totalDelay = totalDelay + 500;
+                    setTimeout(() => {
+                        if (counter >= 128){
+                            counter = 0;
+                        }
+                        
+                        setData(chartData.datasets[0].data, data);
+                        // setLabels(chartData.labels);
+                        let myLineChart = new Chart(ctx).Line(chartData, options);
+                    }, totalDelay);
+                        
+                });
+                socket.on('connection', (socket) => {
+                    console.log('a user connected');
+                });
+            } catch (error) {
+                console.log(error)
+            }
+            
+
             model = await tf.loadLayersModel("http://localhost/video/model.json");
             console.log("model loaded")
             let utils = new Utils('errorMessage');
@@ -210,8 +237,7 @@
                     try {
                         let video = document.getElementById('videoInput');
                         let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-                        let classOutput = document.getElementById('output')
-                        let analizingOutput = document.getElementById('analizing')
+                        
 
                         let cap = new cv.VideoCapture(video);
                         if (!streaming) {
@@ -266,7 +292,7 @@
                                 }
 
                                 console.log(outputData)
-                                testData = []
+                                testData.splice(0, 300);
                             }
 
                             roiGray.delete(); roiSrc.delete();
@@ -302,9 +328,11 @@
                 }
                 
                 function onVideoStopped() {
+                    startAndStop.innerText = 'Start';
                     streaming = false;
                     canvasContext.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
-                    startAndStop.innerText = 'Start';
+                    classOutput.textContent = ""
+                    analizingOutput.textContent = ""
                 }
                 
         });
